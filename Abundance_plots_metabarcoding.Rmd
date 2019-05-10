@@ -9,10 +9,10 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 Load packages
-```{r}
+```{r, results='hide',message=FALSE}
 library(ggplot2)
 library(reshape2)
-#library(tidyr)
+library(tidyr)
 #library(tidyverse)
 library(RColorBrewer)
 #library(cowplot)
@@ -54,7 +54,7 @@ remove the total coumns before transposing the data
 ```{r}
 abundOTU$total<-NULL
 ```
-Transpose the data 
+Transpose the data to have sample names on rows
 ```{r}
 OTUt<-as.data.frame(t(abundOTU))
 str(OTUt)
