@@ -115,7 +115,7 @@ P1<-ggplot(OTU.long,aes(Vertposition,proportion,fill=Order, col=Order)) +
   xlab("Vertical Hieght (m)")+
   ylab("Proportion of Sequence Reads")+
   #ylim(0,4.5e+06)+
-  facet_wrap( . ~ transecttree, ncol=3, scales = "free_y") +
+  facet_wrap( . ~ transecttree, ncol=2, scales = "free_y") +
   theme_bw() +   # remove grey background
   #theme(legend.position="none")+
   scale_fill_manual(values= colours29)+
@@ -167,7 +167,9 @@ summary$Vertposition2<-as.factor(summary$Vertposition)
 str(summary)
 ```
 
+
 plot summary statistics
+Here we can see that most orders found a lower vertical distances have similar proportion across all replicate trees 
 ```{r}
 P3<-ggplot(summary,aes(x = Vertposition, y = average.proportion,fill=Order, col=Order, group = Order)) +
   geom_point(shape = 21, size = 2, alpha = 0.3, position = position_dodge(width = 0.3))+
@@ -187,5 +189,50 @@ P3<-ggplot(summary,aes(x = Vertposition, y = average.proportion,fill=Order, col=
 
 P3
 
+```
+Here, even with a subset of the data, we can plot the mean variance relationship which shows a postive relationship between the mean proportion of sequences and the variance of the proportion of sequences from each vertical height i.e. there are many low abundant taxa therefore producing lower variance and some taxa present at higher proportion have a higher variation. This also suggests that the whole dataset best fits a negative binomial distribution due to many zeros in the dataset and is common for abundance data. 
+
+```{r}
+m1<-lm(log(average.proportion) ~ log(var.proportion), data = summary)
+anova(m1)
+summary(m1)
+```
+Make a funtion to add the model to the plot
+```{r}
+lm_eqn = function(m1) {
+  
+  l <- list(a = format(coef(m1)[1], digits = 2),
+            b = format(abs(coef(m1)[2]), digits = 2),
+            r2 = format(summary(m1)$r.squared, digits = 2));
+  
+  if (coef(m1)[2] >= 0)  {
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,l)
+  } else {
+    eq <- substitute(italic(y) == a - b %.% italic(x)*","~~italic(r)^2~"="~r2,l)    
+  }
+  
+  as.character(as.expression(eq));                 
+}
+```
+creat a mean variance plot
+```{r}
+
+P4<-ggplot(summary,aes(x = log(average.proportion), y = log(var.proportion),fill=Order, col=Order, group = Order)) +
+  geom_point(shape = 21, size = 2, alpha = 0.3)+
+  #geom_smooth(method = "lm", se = FALSE)+
+  xlab("Mean proportion")+
+  ylab("Variation of the proportion")+
+   geom_text(aes(x = -4, y = 0, label = lm_eqn(lm(log(average.proportion) ~ log(var.proportion)))), parse = TRUE, col = "black")+
+    annotate("text",  x = -5, y = -2, label="p < 0.0001" )+
+  theme_bw() +   # remove grey background
+  #theme(legend.position="none")+
+  theme(panel.grid.minor = element_blank())+   # remove minor lines on plot
+  theme(panel.grid.major = element_blank())+   # remove major lines on plot
+  theme(axis.text.x = element_text(colour="grey20",size=12,angle=0,hjust=.5,vjust=.5,face="plain"),  #horizontal axis text, grey, size 16, no angle etc.
+  axis.text.y = element_text(colour="grey20",size=12,angle=0,hjust=1,vjust=0,face="plain"),     #vertical axis text, grey, size 16, no angle etc.
+  axis.title.x = element_text(colour="grey20",size=14,angle=0,hjust=.5,vjust=0,face="plain"),   #horizontal axis label, grey, size 20, no angle etc.
+  axis.title.y = element_text(colour="grey20",size=14,angle=90,hjust=.5,vjust=.5,face="plain"))  #vertical axis label, grey, size 20, no angle etc.  
+
+P4
 ```
 
