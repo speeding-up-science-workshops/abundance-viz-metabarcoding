@@ -1,0 +1,191 @@
+---
+title: "Abundance_metabarcoding_090519"
+author: "Georgina Brennan" 
+date: "5/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Load packages
+```{r}
+library(ggplot2)
+library(reshape2)
+#library(tidyr)
+#library(tidyverse)
+library(RColorBrewer)
+#library(cowplot)
+#library(grid)
+library(plyr)
+
+
+```
+load tree height metabarcoding count data and the mapping file or metadata
+
+```{r}
+
+OTUdata<-read.csv("bact_alldata_taxatable_wTax.csv", row.names = 1, check.names =FALSE)
+str(OTUdata)
+
+meta<-read.table("bact_alldata_mapfile.txt")
+names(meta)
+```
+Remove taxonomy before transposing the data
+```{r}
+OTUdata$taxonomy<-NULL
+
+```
+Calculate the total number of sequences per OTU across all samples 
+
+```{r}
+OTUdata$total<-rowSums(OTUdata)
+
+```
+Decice how you want to filter your data for visualization 
+Here I am looking at the most the most abundant OTUS with greater that 10,000 sequence reads
+
+```{r}
+abundOTU<-subset(OTUdata, total > 10000)
+
+```
+remove the total coumns before transposing the data 
+
+```{r}
+abundOTU$total<-NULL
+```
+Transpose the data 
+```{r}
+OTUt<-as.data.frame(t(abundOTU))
+str(OTUt)
+```
+
+Work out proportions for the most abundant sequence reads  only
+
+```{r}
+OTUt.prop <- as.data.frame(prop.table(data.matrix(OTUt), margin=1))
+OTUt.prop$Index<-rownames(OTUt.prop)
+OTUt.prop <- merge(meta, OTUt.prop, by.y = 'Index', by.x = "SampleNo", all=FALSE)
+
+# check for errors in merging data by looking for missing data
+sum(is.na(OTUt.prop$Project)) # 0 missing data 
+
+```
+make data frame into a long format for plotting and statistical analysis 
+Here we have the OTUs in columns 15 to 32. This should be edited if you change the input file
+
+```{r}
+names(OTUt.prop)
+OTU.long <- gather(OTUt.prop, Taxa, proportion, 15:32, factor_key=TRUE)
+
+names(OTU.long)
+
+```
+
+Read in the tax ID - we removed this at the begining before we tranposed the data
+
+```{r}
+taxalist <- read.csv("taxalist.csv", header=T)
+
+```
+Merge the tax ID with the data based on the OTU ID
+
+```{r}
+OTU.long<-merge(OTU.long, taxalist, by.x = "Taxa", by.y = "OTU")
+```
+TIP: if you have a time series with dates that you want to plot use the following code using the as.Date function 
+df$Date <- as.Date(df$Date, "%d/%m/%Y") 
+
+```{r}
+```
+
+Load some pretty colours
+
+```{r}
+colours29 <- c("#404142", "#2f4b7c", "#a05195", "#ff7c43", "#665191", "#e0e084",
+               "#c68d23", "#8DD3C7", "#9894ae", "#FB8072", "#80B1D3", "#f95d6a", "#B3DE69", "#FCCDE5", 
+               "#D9D9D9", "#BC80BD", "#CCEBC5", "#d45087", "#FFED6F", "#1F78B4", "#33A02C", "#FB9A99", 
+               "#FDBF6F", "#FF7F00", "#a51213", "#CAB2D6", "#77a070", "#B15928", "#003f5c")
+```
+start plotting 
+```{r}
+P1<-ggplot(OTU.long,aes(Vertposition,proportion,fill=Order, col=Order)) +
+  geom_density( stat = "identity", alpha = 0.2)+
+  #geom_line(data = df.data, aes(x = Date2, y= counts, col = Site), linetype = "dashed")+
+  xlab("Vertical Hieght (m)")+
+  ylab("Proportion of Sequence Reads")+
+  #ylim(0,4.5e+06)+
+  facet_wrap( . ~ transecttree, ncol=3, scales = "free_y") +
+  theme_bw() +   # remove grey background
+  #theme(legend.position="none")+
+  scale_fill_manual(values= colours29)+
+  scale_colour_manual(values= colours29)+
+  theme(panel.grid.minor = element_blank())+   # remove minor lines on plot
+  theme(panel.grid.major = element_blank())+   # remove major lines on plot
+  theme(axis.text.x = element_text(colour="grey20",size=12,angle=0,hjust=.5,vjust=.5,face="plain"),  #horizontal axis text, grey, size 16, no angle etc.
+        axis.text.y = element_text(colour="grey20",size=12,angle=0,hjust=1,vjust=0,face="plain"),     #vertical axis text, grey, size 16, no angle etc.
+        axis.title.x = element_text(colour="grey20",size=14,angle=0,hjust=.5,vjust=0,face="plain"),   #horizontal axis label, grey, size 20, no angle etc.
+        axis.title.y = element_text(colour="grey20",size=14,angle=90,hjust=.5,vjust=.5,face="plain")) #vertical axis label, grey, size 20, no angle etc.
+
+P1
+
+```
+```{r}
+
+P2<-ggplot(OTU.long,aes(Vertposition,proportion,fill=Order, col=Order)) +
+  geom_density( stat = "identity", alpha = 0.2)+
+  #geom_line(data = df.data, aes(x = Date2, y= counts, col = Site), linetype = "dashed")+
+  xlab("Vertical Hiegh (m)")+
+  ylab("Proportion of Sequence Reads")+
+  ylim(0,1)+
+  facet_grid(transecttree ~ Order) + #, ncol=3, scales = "free_y") +
+  theme_bw() +   # remove grey background
+  theme(strip.text.x = element_text(size=8, angle=75),
+          strip.text.y = element_text(size=12, face="bold"),
+          strip.background = element_rect(colour="red", fill="#CCCCFF"))+
+  scale_fill_manual(values= colours29)+
+  scale_colour_manual(values= colours29)+
+  theme(panel.grid.minor = element_blank())+   # remove minor lines on plot
+  theme(panel.grid.major = element_blank())+   # remove major lines on plot
+  theme(axis.text.x = element_text(colour="grey20",size=8,angle=0,hjust=.5,vjust=.5,face="plain"),  #horizontal axis text, grey, size 16, no angle etc.
+        axis.text.y = element_text(colour="grey20",size=8,angle=0,hjust=1,vjust=0,face="plain"),     #vertical axis text, grey, size 16, no angle etc.
+        axis.title.x = element_text(colour="grey20",size=12,angle=0,hjust=.5,vjust=0,face="plain"),   #horizontal axis label, grey, size 20, no angle etc.
+        axis.title.y = element_text(colour="grey20",size=12,angle=90,hjust=.5,vjust=.5,face="plain")) #vertical axis label, grey, size 20, no angle etc.
+
+P2
+```
+
+```{r}
+## summary statistcs
+names(OTU.long)
+str(OTU.long)
+
+summary<-ddply(OTU.long,  .(Vertposition, Order), summarize,
+               average.proportion = mean(proportion, na.rm=TRUE), sd.proportion = (sd(proportion, na.rm=TRUE)),var.proportion = (var(proportion)))
+
+summary$Vertposition2<-as.factor(summary$Vertposition)
+str(summary)
+```
+
+plot summary statistics
+```{r}
+P3<-ggplot(summary,aes(x = Vertposition, y = average.proportion,fill=Order, col=Order, group = Order)) +
+  geom_point(shape = 21, size = 2, alpha = 0.3, position = position_dodge(width = 0.3))+
+  #facet_wrap( ~ site, ncol=3, scales = "free_y")+
+  geom_errorbar(data = summary, aes(x = Vertposition, y = average.proportion, ymin = average.proportion - var.proportion, ymax = average.proportion + var.proportion, width = 0.7),col = "black", position = position_dodge(width = 0.3)) +
+  #geom_errorbar(aes(x = Vertposition, y = average.proportion, ymin = average.proportion - var.proportion, ymax = average.proportion + var.proportion, group = Taxa), col = "black", position = position_dodge(width = 0.3)) +
+  xlab("Vertical Height")+
+  ylab("Proportion of Sequence reads")+
+  theme_bw() +   # remove grey background
+  #theme(legend.position="none")+
+  theme(panel.grid.minor = element_blank())+   # remove minor lines on plot
+  theme(panel.grid.major = element_blank())+   # remove major lines on plot
+  theme(axis.text.x = element_text(colour="grey20",size=12,angle=0,hjust=.5,vjust=.5,face="plain"),  #horizontal axis text, grey, size 16, no angle etc.
+  axis.text.y = element_text(colour="grey20",size=12,angle=0,hjust=1,vjust=0,face="plain"),     #vertical axis text, grey, size 16, no angle etc.
+  axis.title.x = element_text(colour="grey20",size=14,angle=0,hjust=.5,vjust=0,face="plain"),   #horizontal axis label, grey, size 20, no angle etc.
+  axis.title.y = element_text(colour="grey20",size=14,angle=90,hjust=.5,vjust=.5,face="plain"))  #vertical axis label, grey, size 20, no angle etc.  
+
+P3
+
+```
+
