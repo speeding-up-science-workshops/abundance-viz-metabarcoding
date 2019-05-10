@@ -36,47 +36,51 @@ Remove taxonomy before transposing the data
 OTUdata$taxonomy<-NULL
 
 ```
-Calculate the total number of sequences per OTU across all samples 
-
-```{r}
-OTUdata$total<-rowSums(OTUdata)
-
-```
-Decice how you want to filter your data for visualization 
-Here I am looking at the most the most abundant OTUS with greater that 10,000 sequence reads
-
-```{r}
-abundOTU<-subset(OTUdata, total > 10000)
-
-```
-remove the total coumns before transposing the data 
-
-```{r}
-abundOTU$total<-NULL
-```
 Transpose the data to have sample names on rows
+
 ```{r}
-OTUt<-as.data.frame(t(abundOTU))
-str(OTUt)
+OTUt<-as.data.frame(t(OTUdata))
+
+```
+Apply proportion normalisation
+
+```{r}
+OTUdata<-OTUt/rowSums(OTUt)
+OTUdata<-OTUdata[,order(colSums(OTUdata),decreasing=TRUE)]
+```
+#Extract list of top N Taxa
+
+```{r}
+N<-20
+taxa_list<-colnames(OTUdata)[1:N]
+N<-length(taxa_list)
 ```
 
-Work out proportions for the most abundant sequence reads  only
+Generate a new table with everything in the top N list
 
 ```{r}
-OTUt.prop <- as.data.frame(prop.table(data.matrix(OTUt), margin=1))
-OTUt.prop$Index<-rownames(OTUt.prop)
-OTUt.prop <- merge(meta, OTUt.prop, by.y = 'Index', by.x = "SampleNo", all=FALSE)
+
+abundOTU<-data.frame(OTUdata[,colnames(OTUdata) %in% taxa_list])
+names(abundOTU)
+
+```
+Decide how you want to filter your data for visualization 
+Here I am looking at the most the most abundant OTUS - top 20 abundant OTUs across all sampling ID's
+
+```{r}
+abundOTU$Index<-rownames(abundOTU)
+OTUt.prop <- merge(meta, abundOTU, by.y = 'Index', by.x = "SampleNo", all=FALSE)
 
 # check for errors in merging data by looking for missing data
 sum(is.na(OTUt.prop$Project)) # 0 missing data 
 
 ```
 make data frame into a long format for plotting and statistical analysis 
-Here we have the OTUs in columns 15 to 32. This should be edited if you change the input file
+Here we have the OTUs in columns 15 to the Nth column in the data.frame. This should be edited if you change the input file
 
 ```{r}
 names(OTUt.prop)
-OTU.long <- gather(OTUt.prop, Taxa, proportion, 15:32, factor_key=TRUE)
+OTU.long <- gather(OTUt.prop, Taxa, proportion, 15:34, factor_key=TRUE)
 
 names(OTU.long)
 
@@ -94,7 +98,7 @@ Merge the tax ID with the data based on the OTU ID
 OTU.long<-merge(OTU.long, taxalist, by.x = "Taxa", by.y = "OTU")
 ```
 TIP: if you have a time series with dates that you want to plot use the following code using the as.Date function 
-df$Date <- as.Date(df$Date, "%d/%m/%Y") 
+# > df$Date <- as.Date(df$Date, "%d/%m/%Y") 
 
 ```{r}
 ```
@@ -138,8 +142,9 @@ P2<-ggplot(OTU.long,aes(Vertposition,proportion,fill=Order, col=Order)) +
   xlab("Vertical Hiegh (m)")+
   ylab("Proportion of Sequence Reads")+
   ylim(0,1)+
-  facet_grid(transecttree ~ Order) + #, ncol=3, scales = "free_y") +
+  facet_grid(transecttree ~ Order, scales = "free", space = "free") +
   theme_bw() +   # remove grey background
+  theme(legend.position="none")+
   theme(strip.text.x = element_text(size=8, angle=75),
           strip.text.y = element_text(size=12, face="bold"),
           strip.background = element_rect(colour="red", fill="#CCCCFF"))+
