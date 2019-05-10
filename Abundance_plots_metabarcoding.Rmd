@@ -141,13 +141,13 @@ P2<-ggplot(OTU.long,aes(Vertposition,proportion,fill=Order, col=Order)) +
   #geom_line(data = df.data, aes(x = Date2, y= counts, col = Site), linetype = "dashed")+
   xlab("Vertical Hiegh (m)")+
   ylab("Proportion of Sequence Reads")+
-  ylim(0,1)+
-  facet_grid(transecttree ~ Order, scales = "free", space = "free") +
+ # ylim(0,1)+
+  facet_grid(transecttree ~ Order, scales = "free") +
   theme_bw() +   # remove grey background
   theme(legend.position="none")+
   theme(strip.text.x = element_text(size=8, angle=75),
           strip.text.y = element_text(size=12, face="bold"),
-          strip.background = element_rect(colour="red", fill="#CCCCFF"))+
+          strip.background = element_rect(colour="black", fill="#CCCCFF"))+
   scale_fill_manual(values= colours29)+
   scale_colour_manual(values= colours29)+
   theme(panel.grid.minor = element_blank())+   # remove minor lines on plot
@@ -227,8 +227,8 @@ P4<-ggplot(summary,aes(x = log(average.proportion), y = log(var.proportion),fill
   #geom_smooth(method = "lm", se = FALSE)+
   xlab("Mean proportion")+
   ylab("Variation of the proportion")+
-   geom_text(aes(x = -4, y = 0, label = lm_eqn(lm(log(average.proportion) ~ log(var.proportion)))), parse = TRUE, col = "black")+
-    annotate("text",  x = -5, y = -2, label="p < 0.0001" )+
+   geom_text(aes(x = -6, y = 0, label = lm_eqn(lm(log(average.proportion) ~ log(var.proportion)))), parse = TRUE, col = "black")+
+    annotate("text",  x = -7, y = -2, label="p < 0.0001" )+
   theme_bw() +   # remove grey background
   #theme(legend.position="none")+
   theme(panel.grid.minor = element_blank())+   # remove minor lines on plot
