@@ -111,7 +111,13 @@ colours29 <- c("#404142", "#2f4b7c", "#a05195", "#ff7c43", "#665191", "#e0e084",
                "#D9D9D9", "#BC80BD", "#CCEBC5", "#d45087", "#FFED6F", "#1F78B4", "#33A02C", "#FB9A99", 
                "#FDBF6F", "#FF7F00", "#a51213", "#CAB2D6", "#77a070", "#B15928", "#003f5c")
 ```
-start plotting 
+
+
+Start plotting data 
+
+1) abundance graph to visualise the abundant taxa across different tree heights.
+
+
 ```{r}
 P1<-ggplot(OTU.long,aes(Vertposition,proportion,fill=Order, col=Order)) +
   geom_density( stat = "identity", alpha = 0.2)+
@@ -134,6 +140,9 @@ P1<-ggplot(OTU.long,aes(Vertposition,proportion,fill=Order, col=Order)) +
 P1
 
 ```
+
+2) Have a look at the biological replicates - one option is to use the facet function:
+
 ```{r}
 
 P2<-ggplot(OTU.long,aes(Vertposition,proportion,fill=Order, col=Order)) +
@@ -160,6 +169,12 @@ P2<-ggplot(OTU.long,aes(Vertposition,proportion,fill=Order, col=Order)) +
 P2
 ```
 
+
+This data contains 10 biological replicates (samples collected from 10 different trees).
+
+Using the summarize function here we calculated the average proportion of sequences, the variance and standard deviation at each height across all biolgical replicates. 
+
+
 ```{r}
 ## summary statistcs
 names(OTU.long)
@@ -168,13 +183,14 @@ str(OTU.long)
 summary<-ddply(OTU.long,  .(Vertposition, Order), summarize,
                average.proportion = mean(proportion, na.rm=TRUE), sd.proportion = (sd(proportion, na.rm=TRUE)),var.proportion = (var(proportion)))
 
-summary$Vertposition2<-as.factor(summary$Vertposition)
 str(summary)
 ```
 
 
-plot summary statistics
-Here we can see that most orders found a lower vertical distances have similar proportion across all replicate trees 
+3) Plot summary statistics: average ± the biological variation
+Here we can see that most orders found a lower vertical distances have similar proportion across all replicate trees.
+
+
 ```{r}
 P3<-ggplot(summary,aes(x = Vertposition, y = average.proportion,fill=Order, col=Order, group = Order)) +
   geom_point(shape = 21, size = 2, alpha = 0.3, position = position_dodge(width = 0.3))+
@@ -195,8 +211,13 @@ P3<-ggplot(summary,aes(x = Vertposition, y = average.proportion,fill=Order, col=
 P3
 
 ```
-Here, even with a subset of the data, we can plot the mean variance relationship which shows a postive relationship between the mean proportion of sequences and the variance of the proportion of sequences from each vertical height i.e. there are many low abundant taxa therefore producing lower variance and some taxa present at higher proportion have a higher variation. This also suggests that the whole dataset best fits a negative binomial distribution due to many zeros in the dataset and is common for abundance data. 
 
+
+
+Here, even with a subset of the data, we can plot the mean variance relationship which shows a postive relationship between the mean proportion of sequences and the variance of the proportion of sequences across all samples i.e. there are many zeros and many low abundant taxa therefore producing lower variance and few taxa present at high proportions. This also suggests that the whole dataset best fits a negative binomial distribution due to many zeros in the dataset, which is common for abundance data. 
+
+
+Simple linear model to support the mean and variance relationship:
 ```{r}
 m1<-lm(log(average.proportion) ~ log(var.proportion), data = summary)
 anova(m1)
@@ -219,7 +240,11 @@ lm_eqn = function(m1) {
   as.character(as.expression(eq));                 
 }
 ```
-creat a mean variance plot
+
+
+4) Creat a mean variance plot
+
+
 ```{r}
 
 P4<-ggplot(summary,aes(x = log(average.proportion), y = log(var.proportion),fill=Order, col=Order, group = Order)) +
