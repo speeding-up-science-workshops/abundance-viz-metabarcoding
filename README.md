@@ -3,3 +3,4 @@ RStudio: [![Binder](http://mybinder.org/badge_logo.svg)](http://mybinder.org/v2/
 
 Binder: [![Binder](http://mybinder.org/badge_logo.svg)](http://mybinder.org/v2/gh/G-Brennan/Metabarcoding_group_UCDavis/master)
 
+hello Titus
